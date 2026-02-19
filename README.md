@@ -59,7 +59,47 @@ Notes:
 - `models/yolov8n.pt`: auto-copied locally on first run if not already present.
 - `videos/lane*.mp4`: auto-generated from the sidebar button or first simulation start if missing/invalid.
 
-## Setup
+## Tech Stack
+
+### Languages
+- Python (application logic, UI, CV, scheduling)
+- Markdown (documentation)
+- CSV (runtime logs)
+
+### Frontend
+- Streamlit UI (`app.py`)
+- Embedded HTML/CSS (custom traffic light cards/theme via `st.markdown` in `app.py`)
+
+### Backend
+- Streamlit app server (single Python process; no separate REST backend)
+- Core backend modules:
+  - Detection: `src/detector.py`
+  - Lane counting: `src/lane_counter.py`
+  - Signal control logic: `src/signal_controller.py`
+  - Utilities/logging/video I/O: `src/utils.py`
+
+### ML / Computer Vision
+- Ultralytics YOLOv8 (`src/detector.py`)
+- OpenCV (`app.py`, `src/detector.py`, `src/utils.py`)
+
+### Data / Analytics
+- Pandas (`app.py`) for dashboard tables and trend data handling
+- Matplotlib (`app.py`) for vehicle-count-over-time graph
+- CSV file logging (`logs/traffic_log.csv` via `src/utils.py`)
+
+### Database and ORM
+- Database: None
+- ORM: None
+- Persistence is file-based (CSV logs)
+
+### Tooling
+- Package manager: `pip`
+- Environment management: `venv`
+- Dependency spec: `requirements.txt`
+- Build tool: None
+- Test framework: None configured in this repository
+
+## Setup & Run
 1. Open terminal in `/Users/manjeetkumar/Documents/New project/smart_traffic_ai`.
 2. Create and activate virtual environment (recommended):
    - macOS/Linux:
@@ -71,11 +111,16 @@ Notes:
    ```bash
    pip install -r requirements.txt
    ```
-
-## Run
-```bash
-streamlit run app.py
-```
+4. Start the app:
+   ```bash
+   streamlit run app.py
+   ```
+5. Open in browser:
+   - `http://127.0.0.1:8501`
+6. Demo flow:
+   - Select **Simulation** mode
+   - Click **Generate Dummy Videos** (if needed)
+   - Click **Start System**
 
 ## Demo Instructions
 1. Start app with `streamlit run app.py`.
