@@ -183,6 +183,10 @@ MIN_GREEN_TIME = 15  # seconds
 MAX_GREEN_TIME = 60  # seconds
 TOTAL_CYCLE_TIME = 120  # seconds
 
+## Web-page url;
+
+--http://localhost:8501/
+
 # 🚀 Setup & Run
 
 ## 1️⃣ Clone Repository
