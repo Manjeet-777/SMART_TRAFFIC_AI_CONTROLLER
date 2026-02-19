@@ -205,7 +205,7 @@ pip install -r requirements.txt
 streamlit run app.py
 
 Open in browser:(chrome suggested)
-http://127.0.0.1:8501
+http://localhost:8501/
 
 🎥 Demo Flow
 Select Simulation Mode
