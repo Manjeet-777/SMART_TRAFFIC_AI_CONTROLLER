@@ -20,3 +20,7 @@ env/
 
 # Logs/runtime artifacts
 *.log
+
+# Runtime-generated media/model artifacts
+videos/uploaded_lane*.mp4
+yolov8n.pt
