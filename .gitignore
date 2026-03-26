@@ -9,6 +9,8 @@ __pycache__/
 *.so
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
+.coverage
 
 # Virtual environments
 .venv/
@@ -17,10 +19,14 @@ env/
 
 # Streamlit/cache
 .streamlit/
+.cache/
 
 # Logs/runtime artifacts
 *.log
+logs/*.csv
+!logs/.gitkeep
 
 # Runtime-generated media/model artifacts
-videos/uploaded_lane*.mp4
+videos/*
+!videos/README.md
 yolov8n.pt

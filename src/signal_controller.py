@@ -58,23 +58,29 @@ class AdaptiveSignalController:
 
     def _recompute_priorities(self) -> None:
         for lane_state in self.lanes.values():
+            congestion_bonus = min(lane_state.vehicle_count, 30) * 0.12
             lane_state.priority_score = (
                 lane_state.vehicle_count * VEHICLE_WEIGHT
                 + lane_state.waiting_time * WAITING_WEIGHT
+                + congestion_bonus
             )
 
     @staticmethod
     def density_based_green_time(vehicle_count: int) -> int:
-        if vehicle_count <= 10:
+        if vehicle_count <= 5:
             return 15
-        if vehicle_count <= 25:
-            return 25
-        if vehicle_count <= 50:
-            return 40
-        return 60
+        if vehicle_count <= 10:
+            return 20
+        if vehicle_count <= 18:
+            return 28
+        if vehicle_count <= 28:
+            return 38
+        return 50
 
     def _allocate_green_time(self, lane_id: int) -> int:
-        desired_time = self.density_based_green_time(self.lanes[lane_id].vehicle_count)
+        lane_state = self.lanes[lane_id]
+        desired_time = self.density_based_green_time(lane_state.vehicle_count)
+        desired_time += min(int(lane_state.waiting_time // 8) * 2, 10)
         desired_time = max(MIN_GREEN_TIME, min(MAX_GREEN_TIME, desired_time))
 
         remaining_lanes_after_this = len(self.pending_cycle_lanes) - 1
@@ -93,8 +99,8 @@ class AdaptiveSignalController:
             self.pending_cycle_lanes,
             key=lambda lane_id: (
                 self.lanes[lane_id].priority_score,
-                self.lanes[lane_id].waiting_time,
                 self.lanes[lane_id].vehicle_count,
+                self.lanes[lane_id].waiting_time,
                 -lane_id,
             ),
         )

@@ -8,7 +8,13 @@ from typing import List, Tuple
 import cv2
 from ultralytics import YOLO
 
-from .config import CONFIDENCE_THRESHOLD, DETECTION_CLASSES, IOU_THRESHOLD, MODEL_PATH
+from .config import (
+    CONFIDENCE_THRESHOLD,
+    DETECTION_CLASSES,
+    FALLBACK_MODEL_PATHS,
+    IOU_THRESHOLD,
+    MODEL_PATH,
+)
 
 
 @dataclass
@@ -30,10 +36,16 @@ class VehicleDetector:
         self.target_classes = set(DETECTION_CLASSES)
         self.model = self._load_model(model_path)
 
+    @staticmethod
+    def _resolve_model_source(model_path: Path) -> str:
+        for candidate in (Path(model_path), *map(Path, FALLBACK_MODEL_PATHS)):
+            if candidate.exists() and candidate.stat().st_size > 1_000_000:
+                return str(candidate)
+        return "yolov8n.pt"
+
     def _load_model(self, model_path: Path) -> YOLO:
         model_path = Path(model_path)
-        should_use_local = model_path.exists() and model_path.stat().st_size > 1_000_000
-        model_source = str(model_path) if should_use_local else "yolov8n.pt"
+        model_source = self._resolve_model_source(model_path)
 
         try:
             model = YOLO(model_source)
@@ -41,14 +53,16 @@ class VehicleDetector:
             model = YOLO("yolov8n.pt")
 
         # Keep a local copy in /models when possible for predictable project layout.
-        if not should_use_local:
-            try:
-                checkpoint_path = Path(model.ckpt_path)
+        try:
+            if not (model_path.exists() and model_path.stat().st_size > 1_000_000):
+                source_path = Path(model_source) if model_source != "yolov8n.pt" else None
+                checkpoint_path = Path(model.ckpt_path) if getattr(model, "ckpt_path", None) else None
+                copy_source = source_path if source_path and source_path.exists() else checkpoint_path
                 model_path.parent.mkdir(parents=True, exist_ok=True)
-                if checkpoint_path.exists() and checkpoint_path != model_path:
-                    shutil.copy(checkpoint_path, model_path)
-            except Exception:
-                pass
+                if copy_source and copy_source.exists() and copy_source != model_path:
+                    shutil.copy(copy_source, model_path)
+        except Exception:
+            pass
 
         return model
 

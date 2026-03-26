@@ -7,12 +7,21 @@ from typing import Dict, Iterable
 import cv2
 import numpy as np
 
-from .config import FRAME_HEIGHT, FRAME_WIDTH, LOG_FILE, LOGS_DIR, MODELS_DIR, VIDEOS_DIR
+from .config import (
+    DEMO_VIDEOS_DIR,
+    FRAME_HEIGHT,
+    FRAME_WIDTH,
+    LOG_FILE,
+    LOGS_DIR,
+    MODELS_DIR,
+    VIDEOS_DIR,
+)
 
 
 def ensure_project_directories() -> None:
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+    DEMO_VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
     if not LOG_FILE.exists():
@@ -91,6 +100,35 @@ def build_junction_canvas(
     signal_state: dict,
     lane_names: Dict[int, str],
 ) -> np.ndarray:
+    def put_readable_text(
+        frame: np.ndarray,
+        text: str,
+        origin: tuple[int, int],
+        color: tuple[int, int, int],
+        scale: float,
+        thickness: int,
+    ) -> None:
+        cv2.putText(
+            frame,
+            text,
+            origin,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            scale,
+            (8, 8, 8),
+            thickness + 2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame,
+            text,
+            origin,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            scale,
+            color,
+            thickness,
+            cv2.LINE_AA,
+        )
+
     current_green_lane = signal_state["current_green_lane"]
     waiting_times = signal_state["waiting_times"]
     priority_scores = signal_state["priority_scores"]
@@ -101,48 +139,46 @@ def build_junction_canvas(
         frame_h, frame_w = frame.shape[:2]
 
         border_color = (70, 200, 70) if lane_id == current_green_lane else (70, 70, 220)
-        cv2.rectangle(frame, (0, 0), (frame_w - 1, frame_h - 1), border_color, 5)
+        cv2.rectangle(frame, (0, 0), (frame_w - 1, frame_h - 1), border_color, 6)
+
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (14, 14), (270, 138), (10, 15, 22), -1)
+        frame = cv2.addWeighted(overlay, 0.56, frame, 0.44, 0)
 
         overlay_lines = [
             f"Lane {lane_id} ({lane_names[lane_id]})",
-            f"Count: {lane_counts[lane_id]}",
+            f"Count: {lane_counts[lane_id]} vehicles",
             f"Waiting: {waiting_times[lane_id]:.1f}s",
             f"Priority: {priority_scores[lane_id]:.2f}",
         ]
 
         for idx, text in enumerate(overlay_lines):
-            cv2.putText(
+            put_readable_text(
                 frame,
                 text,
-                (14, 30 + idx * 24),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.65,
-                (255, 255, 255),
+                (26, 44 + idx * 26),
+                (240, 242, 247),
+                0.78,
                 2,
-                cv2.LINE_AA,
             )
 
         if lane_id == current_green_lane:
-            cv2.putText(
+            put_readable_text(
                 frame,
                 f"GREEN: {signal_state['countdown']}s",
-                (14, frame_h - 22),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.85,
+                (22, frame_h - 24),
                 (60, 220, 60),
+                0.95,
                 2,
-                cv2.LINE_AA,
             )
         else:
-            cv2.putText(
+            put_readable_text(
                 frame,
                 "RED",
-                (14, frame_h - 22),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.85,
+                (22, frame_h - 24),
                 (80, 80, 255),
+                0.95,
                 2,
-                cv2.LINE_AA,
             )
 
         annotated_frames.append(frame)
@@ -150,19 +186,17 @@ def build_junction_canvas(
     top_row = np.hstack(annotated_frames[0:2])
     bottom_row = np.hstack(annotated_frames[2:4])
     grid = np.vstack([top_row, bottom_row])
-
-    cv2.rectangle(grid, (0, 0), (grid.shape[1] - 1, 56), (15, 25, 35), -1)
-    cv2.putText(
-        grid,
+    header_height = 74
+    header = np.full((header_height, grid.shape[1], 3), (22, 16, 10), dtype=np.uint8)
+    put_readable_text(
+        header,
         f"Smart Traffic AI | Current Green Lane: {current_green_lane} | Countdown: {signal_state['countdown']}s",
-        (15, 36),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.85,
+        (18, 46),
         (255, 255, 255),
+        0.92,
         2,
-        cv2.LINE_AA,
     )
-    return grid
+    return np.vstack([header, grid])
 
 
 def append_traffic_log(
