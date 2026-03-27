@@ -29,4 +29,4 @@ logs/*.csv
 # Runtime-generated media/model artifacts
 videos/*
 !videos/README.md
-yolov8n.pt
+/yolov8n.pt

@@ -5,4 +5,4 @@ __pycache__/
 .DS_Store
 logs/*.csv
 videos/*
-yolov8n.pt
+/yolov8n.pt

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: smart-traffic-ai-controller
+    runtime: docker
+    plan: free
+    autoDeployTrigger: commit
+    healthCheckPath: /
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
